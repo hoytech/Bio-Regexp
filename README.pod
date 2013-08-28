@@ -1,0 +1,36 @@
+=head1 NAME
+
+Bio::Regexp - Exhaustive DNA/RNA/Protein regexp searches
+
+=head1 SYNOPSIS
+
+    my @matches = Bio::Regexp->new
+                             ->add(q{AGC[2]YY[GTZ]{3,5}GCGC})
+                             ->dna
+                             ->circular
+                             ->match($input);
+
+    ## Example match:
+    ##   {
+    ##     match => 'AGCCGGGTGCC',
+    ##     start => 203,
+    ##     end => 214,
+    ##     strand => 1,
+    ##   }
+
+
+=head1 DESCRIPTION
+
+=head1 SEE ALSO
+
+L<Bio-Regexp github repo|https://github.com/hoytech/Bio-Regexp>
+
+=head1 AUTHOR
+
+Doug Hoyte, C<< <doug@hcsw.org> >>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2013 Doug Hoyte.
+
+This module is licensed under the same terms as perl itself.
