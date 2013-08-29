@@ -192,15 +192,13 @@ Bio::Regexp - Exhaustive DNA/RNA/protein regexp searches
 
 =head1 DESCRIPTION
 
-This module is for searching inside DNA or RNA or protein sequences. The sequence to be found is specified by a regular expression. Actually the search language is a restricted sub-set of perl regular expressions with IUPAC short form expansions.
+This module is for searching inside DNA or RNA or protein sequences. The sequence to be found is specified by a regular expression. Actually the search language is a restricted sub-set of perl regular expressions. IUPAC short form expansions are also in effect for DNA/RNA (they are kind of like character classes).
 
-One goal of this module is to provide a complete search throughout biological sequences. Given the particulars of the sequence (DNA/RNA/protein, linear sequence/circular plasmid, single/double stranded) it attempts to figure out all of the possible matches with no false positive or duplicate matches.
+One goal of this module is to provide a complete search. Given the particulars of a sequence (DNA/RNA/protein, linear molecule/circular plasmid, single/double stranded) it attempts to figure out all of the possible matches with no missing, false-positive, or duplicate matches.
 
-It handles cases where matches overlap in the sequence or your regular expression can match in multiple ways. For circular DNA plasmids it will find matches even if they span the "end" followed by the "beginning" of your linearised circular sequence. For double-stranded DNA it will find matches on the reverse complement strand as well.
+It handles cases where matches overlap in the sequence or your regular expression can match in multiple ways. For circular DNA plasmids it will find matches even if they span the "end" followed by the "beginning" of the arbitrary location in the circular sequence selected to be interbase coordinate 0. For double-stranded DNA it will find matches on the reverse complement strand as well.
 
-This module is designed to be very efficient. It usually copies none of the input sequence data except to extract matches (though this can be disabled too leaving only indices -- though see the section on circular matches). Avoiding copying helps performance when searching very large inputs, perhaps stored in memory-mapped files.
-
-Another design principle is that any number of regular expressions can be combined into one so that many patterns can be searched for simultaneously while doing only a single pass over the data. This lets you efficiently search for a list of all restriction enzymes that don't cut a target sequence for example. This design also lets us scan the reverse complement strand using a single pass over the sense strand.
+The typical use case of this module is to search for few or many small patterns in large amounts of input data. Although it is optimised for that workflow it is efficient at a variety of tasks. Usually none of the input sequence data is copied at all except to extract matches (though this can be disabled too leaving only indices).
 
 
 
@@ -209,6 +207,9 @@ Another design principle is that any number of regular expressions can be combin
 The input string passed to C<match> must be a nucleotide sequence for now (protein sequences will be supported better soon). There must be no line breaks or other whitespace, or any other kind of FASTA-like header/data.
 
 Unless C<strict_case> is specified, the case of your patterns and the case of your input doesn't matter. I suggest using uppercase everywhere.
+
+
+
 
 
 
@@ -245,11 +246,18 @@ For DNA data this can be useful for finding the comprehensive set of possible mo
 
 =head1 IUPAC SHORT FORMS
 
-For DNA and RNA, IUPAC incompletely specified amino acid sequences can be used. These are analogous to regular expression character classes. Just like perl's C<\s> is short for C<[ \r\n\t]>, in IUPAC form L<V> is short for C<[ACG]>, or C<[^T]>. Unless L<strict_thymine_uracil> is in effect this will actually be like C<[^TU]> for both DNA and RNA inputs.
+For DNA and RNA, IUPAC incompletely specified amino acid sequences can be used. These are analogous to regular expression character classes. Just like perl's C<\s> is short for C<[ \r\n\t]>, in IUPAC form C<V> is short for C<[ACG]>, or C<[^T]>. Unless C<strict_thymine_uracil> is in effect this will actually be like C<[^TU]> for both DNA and RNA inputs.
+
 
 
 
 =head1 ADDING MULTIPLE SEARCH PATTERNS
+
+One requirement for this module is that any number of regular expressions can be combined into one so that many patterns can be searched for simultaneously while doing a single pass over the data.
+
+Doing a single pass is generally more efficient because of memory locality and has a few other positive side-effects. For instance, we can scan the reverse complement strand using a single pass over the sense strand and therefore avoid copying the input.
+
+This module should be able to support quite a large number of simultaneous search patterns although I have some ideas for future optimisations. Large numbers of patterns may come in handy when building a list of all restriction enzymes that don't cut a target sequence, or finding all PCR primer sites accounting for IUPAC expanded primers.
 
 Multiple patterns can be added at once simply by calling C<add()> multiple times before attempting a C<match> (or a C<compile>):
 
@@ -259,9 +267,12 @@ Multiple patterns can be added at once simply by calling C<add()> multiple times
 
     my @matches = $re->match($input);
 
-Which pattern matched is returned as the C<match> key in the returned match results. You should probably have a hash of all your patterns so that you can look them up when processing matches. The way this is implemented is similar to the very useful L<Regexp::Assemble> except it doesn't implement the hacks needed for ancient perl versions.
+Which pattern matched is returned as the C<match> key in the returned match results. You should probably have a hash of all your patterns so that you can look them up while processing matches. The way this is implemented is similar to the very useful L<Regexp::Assemble> except that it doesn't implement the hacks needed for ancient perl versions.
 
 When matching, only a single pass will be made over the data in order to find all possible locations that either of the added sequences could have matched. Large numbers of patterns should be fairly efficient because the perl 5.10+ regular expression engine uses a trie data structure for such patterns (and 5.10 is the minimum required perl for other reasons).
+
+
+
 
 
 =head1 CIRCULAR INPUTS
