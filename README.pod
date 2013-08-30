@@ -4,20 +4,20 @@ Bio::Regexp - Exhaustive DNA/RNA/protein regexp searches
 
 =head1 SYNOPSIS
 
-    my @matches = Bio::Regexp->new
+    my @matches = Bio::Regexp->new->dna
                              ->add('A?GCYY[^G]{2,3}GCGC')
-                             ->dna
+                             ->add('GAATTC')
                              ->circular
                              ->match($input);
 
     ## Example match:
-        {
-          'regexp' => 'A?GCYY[^G]{2,3}GCGC',
-          'strand' => 1,
-          'match' => 'AGCTCAAAGCGC',
-          'end' => '12',
-          'start' => '0'
-        }
+    {
+      'match' => 'AGCTCAAAGCGC',
+      'start' => '0',
+      'end' => '12',
+      'strand' => 1,
+      'regexp' => 'A?GCYY[^G]{2,3}GCGC'
+    }
 
 
 =head1 DESCRIPTION
@@ -36,22 +36,16 @@ The typical use case of this module is to search for multiple small patterns in 
 
 The input string passed to C<match> must be a nucleotide sequence for now (protein sequences will be supported soon). There must be no line breaks or other whitespace, or any other kind of FASTA-like header/data.
 
+If your data does not conform to the description above then the results are undefined and you should sanitise your data before using this module.
+
+If your data is anything other than DNA (the default) you must call one of the type functions C<dna>, C<rna>, or C<protein>:
+
+    my $re = Bio::Regexp->new->rna->add('GAUAUC')->compile;
+
+Normally however C<T> and C<U> are both compiled into C<[TU]> so your patterns will work on DNA and RNA. If you wish to prevent this and throw an error while compiling your regexp, call C<strict_thymine_uracil>.
+
 Unless C<strict_case> is specified, the case of your patterns and the case of your input doesn't matter. I suggest using uppercase everywhere.
 
-Normally C<T> and C<U> are both compiled into C<[TU]> so your patterns will work on DNA and RNA. If you wish to prevent this, call C<strict_thymine_uracil>.
-
-
-
-
-=head1 INTERBASE COORDINATES
-
-All offsets returned by this module are in "interbase coordinates". Rather than the first base in a sequence being considered "base 1" as most biologists might think of it, or even "base 0" as computer scientists might, in interbase coordinates the first base is the sequence spanning coordinates 0 through 1.
-
-One of the reasons this is useful is because it allows us to unambiguously specify 0-width sequences like for example endonuclease cut sites. If index-style coordinates are used it is ambiguous whether the cut is before or after.
-
-Unlike with string indices, the start coordinate can be greater than the end coordinate. This only happens if C<double_stranded> is set (the default for DNA) and the pattern was found on the reverse complement strand. Use C<single_stranded> if you don't want reverse complement matches.
-
-For circular inputs, interbase coordinates can also be greater than the length of the input. This is interpreted as wrapping back around to the beginning in a modular arithmetic fashion. Similarly for negative coordinates. However, "out-of-range" interbase coordinates are only defined for circular inputs and referencing them on linear inputs will throw errors.
 
 
 
@@ -74,9 +68,23 @@ For DNA data this can be useful for finding the comprehensive set of possible mo
 
 
 
+
+=head1 INTERBASE COORDINATES
+
+All offsets returned by this module are in "interbase coordinates". Rather than the first base in a sequence being described as "base 1" as most biologists might think of it, or even "base 0" as computer scientists might, with interbase coordinates the first base is described as the sequence spanning coordinates 0 through 1.
+
+One of the reasons this is useful is because it allows us to unambiguously specify 0-width sequences like for example endonuclease cut sites. If index-style coordinates are used it is ambiguous whether the cut is before or after.
+
+Unlike with string indices, the start coordinate can be greater than the end coordinate. This happens when C<double_stranded> is set (the default for DNA) and the pattern is found on the reverse complement strand. Use C<single_stranded> if you don't want reverse complement matches.
+
+For circular inputs, interbase coordinates can also be greater than the length of the input. This is interpreted as wrapping back around to the beginning in a modular arithmetic fashion. Similarly, negative coordinates wrap around to the end of the input. "Out-of-range" interbase coordinates are only defined for circular inputs and referencing them on linear inputs will throw errors.
+
+
+
+
 =head1 IUPAC SHORT FORMS
 
-For DNA and RNA, IUPAC incompletely specified amino acid sequences can be used. These are analogous to regular expression character classes. Just like perl's C<\s> is short for C<[ \r\n\t]>, in IUPAC form C<V> is short for C<[ACG]>, or C<[^T]>. Unless C<strict_thymine_uracil> is in effect this will actually be like C<[^TU]> for both DNA and RNA inputs.
+For DNA and RNA, IUPAC incompletely specified amino acid sequences can be used. These are analogous to regular expression character classes. Just like perl's C<\s> is short for C<[ \r\n\t]>, in IUPAC form C<V> is short for C<[ACG]>, or C<[^T]>. Unless C<strict_thymine_uracil> is in effect this will actually be C<[^TU]> for both DNA and RNA inputs.
 
 See L<wikipedia|http://en.wikipedia.org/wiki/Nucleic_acid_notation> for the list of IUPAC short forms.
 
@@ -86,9 +94,9 @@ See L<wikipedia|http://en.wikipedia.org/wiki/Nucleic_acid_notation> for the list
 
 An important feature of this module is that any number of regular expressions can be combined into one so that many patterns can be searched for simultaneously while doing a single pass over the data.
 
-Doing a single pass is generally more efficient because of memory locality and has a few other positive side-effects. For instance, we can scan the reverse complement strand using a single pass and therefore avoid copying and reversing the input (which may be quite large).
+Doing a single pass is generally more efficient because of memory locality and has other positive side-effects. For instance, we can also scan a strand's reverse complement during the pass and therefore avoid copying and reversing the input (which may be quite large).
 
-This module should be able to support quite a large number of simultaneous search patterns although I have some ideas for future optimisations. Large numbers of patterns may come in handy when building a list of all restriction enzymes that don't cut a target sequence, or finding all PCR primer sites accounting for IUPAC expanded primers.
+This module should be able to support quite a large number of simultaneous search patterns although I have some ideas for future optimisations if they prove necessary. Large numbers of patterns may come in handy when building a list of all restriction enzymes that don't cut a target sequence, or finding all PCR primer sites accounting for IUPAC expanded primers.
 
 Multiple patterns can be added at once simply by calling C<add()> multiple times before attempting a C<match> (or a C<compile>):
 
