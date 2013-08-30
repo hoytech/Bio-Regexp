@@ -68,7 +68,7 @@ verify(Bio::Regexp->new->add('AGGT')->circular,
 
 verify(Bio::Regexp->new->add('AA')->circular,
        'AAGCGA',
-       'circular no extra',
+       'circular no dup',
        matches => [[0,2],[5,7]]);
 
 
@@ -78,8 +78,25 @@ verify(Bio::Regexp->new->add('GAAC')->circular,
        matches => [[7,3]]);
 
 
+verify(Bio::Regexp->new->add('HYNV'),
+       'ACTG',
+       'basic IUPAC',
+       matches => [[0,4]]);
+
+verify(Bio::Regexp->new->add('[^H]{2}'),
+       'GG',
+       'negated IUPAC',
+       matches => [[0,2]]);
+
+verify(Bio::Regexp->new->add('DWW[^MG][^V][^D]'),
+       'GAATTC',
+       'combine base and IUPAC',
+       matches => [[0,6],[6,0]]);
+
+
 
 done_testing();
+
 
 
 sub verify {
