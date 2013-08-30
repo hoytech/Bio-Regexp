@@ -141,10 +141,10 @@ sub match {
 
   $self->compile;
 
+  my @output;
+
   my @matches = Regexp::Exhaustive::exhaustive($input => $self->{compiled_regexp},
                                                qw[ $1 @- @+ $^R ]);
-
-  my @output;
 
   foreach my $match (@matches) {
     my $element = {
@@ -155,6 +155,46 @@ sub match {
                   };
 
     push @output, $element;
+  }
+
+
+  ## Check circular component
+
+  if ($self->{arg}->{circular}) {
+    my $start = length($input) - $self->{max} + 1;
+    $start = 1 if $start < 1;
+
+    my $end = $self->{max} - 1;
+    $end = 0 if $end < 0;
+
+    my $input_overlap = substr($input, $start) . substr($input, 0, $end);
+
+    my @matches_overlap = Regexp::Exhaustive::exhaustive($input_overlap => $self->{compiled_regexp},
+                                                         qw[ $1 @- @+ $^R ]);
+
+    foreach my $match (@matches_overlap) {
+      my $element = {
+                      match => $match->[0],
+                      start => $match->[1]->[0],
+                      end => $match->[2]->[0],
+                      %{ $self->{components}->[$match->[3]] },
+                    };
+
+      $element->{start} += $start;
+      $element->{end} += $start;
+
+      push @output, $element;
+    }
+  }
+
+
+  ## Re-order reverse complement start/end
+
+  if ($self->{arg}->{strands} == 2) {
+    foreach my $match (@output) {
+      ($match->{start}, $match->{end}) = ($match->{end}, $match->{start})
+        if $match->{strand} == 2;
+    }
   }
 
   return @output;

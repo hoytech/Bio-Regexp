@@ -6,6 +6,12 @@ use Data::Dumper;
 use Bio::Regexp;
 
 
+verify(Bio::Regexp->new->add('')->single_stranded,
+       'AAA',
+       'empty regexp finds all interbase coords',
+       matches => [[0,0],[1,1],[2,2],[3,3]]);
+
+
 verify(Bio::Regexp->new->add('AA')->single_stranded,
        'AAA',
        'basic overlap',
@@ -33,31 +39,44 @@ verify(Bio::Regexp->new->add('AA')->add('AC')->single_stranded,
 verify(Bio::Regexp->new->add('ATG'),
        'AAAGACATCC',
        'basic reverse complement',
-       matches => [[5,8]]);
-
-
-verify(Bio::Regexp->new->add('ATG'),
-       'AAAGACATCC',
-       'basic reverse complement',
-       matches => [[5,8]]);
+       matches => [[8,5]]);
 
 
 verify(Bio::Regexp->new->rna->add('AUG'),
        'GGCCGGCATAA',
        'RNA pattern, DNA string',
-       matches => [[6,9]]);
+       matches => [[9,6]]);
 
 
 verify(Bio::Regexp->new->add('TAT'),
        'AUGUAUAA',
        'DNA pattern, RNA string',
-       matches => [[3,6],[4,7]]);
+       matches => [[3,6],[7,4]]);
 
 
 verify(Bio::Regexp->new->add('GAATTC'),
        'AGACTGAGAATTCGGG',
        'palindrome matches twice same place',
-       matches => [[7,13],[7,13]]);
+       matches => [[7,13],[13,7]]);
+
+
+verify(Bio::Regexp->new->add('AGGT')->circular,
+       'GTCGCGAG',
+       'basic circular',
+       matches => [[6,10]]);
+
+
+verify(Bio::Regexp->new->add('AA')->circular,
+       'AAGCGA',
+       'circular no extra',
+       matches => [[0,2],[5,7]]);
+
+
+verify(Bio::Regexp->new->add('GAAC')->circular,
+       'TCAGT',
+       'circular and reverse complement',
+       matches => [[7,3]]);
+
 
 
 done_testing();
