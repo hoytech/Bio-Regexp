@@ -44,6 +44,8 @@ sub double_stranded { _arg($_[0], 'strands', 2) }
 sub strict_thymine_uracil { _arg($_[0], 'strict_thymine_uracil', 1) }
 sub strict_case { _arg($_[0], 'strict_case', 1) }
 
+sub no_substr { _arg($_[0], 'no_substr', 1) }
+
 
 sub _arg {
   my ($self, $arg, $val) = @_;
@@ -83,7 +85,7 @@ sub compile {
   foreach my $regexp (@{ $self->{regexps} }) {
     ## Parse
 
-    my $ast = Bio::Regexp::AST->new($regexp, $self->{type}, $self->{arg}->{strict_thymine_uracil});
+    my $ast = Bio::Regexp::AST->new($regexp, $self->{type}, $self->{arg});
 
     ## Compute meta data
 
@@ -122,6 +124,7 @@ sub compile {
 
   my $compiled_regexp = ($self->{arg}->{strict_case} ? '' : '(?i)') .
                         '(' .
+                        ($self->{arg}->{no_substr} ? '?:' : '') .
                         join('|', @regexp_fragments) .
                         ')';
 
@@ -202,7 +205,6 @@ sub match {
 
 
 
-
 1;
 
 
@@ -239,7 +241,7 @@ The goal of this module is to provide a complete search. Given the particulars o
 
 It handles cases where matches overlap in the sequence and cases where your regular expression can match in multiple ways. For circular DNA plasmids it will find matches even if they span the arbitrary location in the circular sequence selected to the "start". For double-stranded DNA it will find matches on the reverse complement strand as well.
 
-The typical use case of this module is to search for multiple small patterns in large amounts of input data. Although it is optimised for that task it is efficient at others. For efficiency, usually none of the input sequence data is copied at all except to extract matches (this can be disabled too).
+The typical use case of this module is to search for multiple small patterns in large amounts of input data. Although it is optimised for that task it is efficient at others. For efficiency, usually none of the input sequence data is copied at all except to extract matches (but this can be disabled with C<no_substr>).
 
 
 

@@ -9,7 +9,7 @@ use Bio::Regexp;
 verify(Bio::Regexp->new->add('')->single_stranded,
        'AAA',
        'empty regexp finds all interbase coords',
-       matches => [[0,0],[1,1],[2,2],[3,3]]);
+       matches => [[0,0,''],[1,1],[2,2],[3,3]]);
 
 
 verify(Bio::Regexp->new->add('AA')->single_stranded,
@@ -39,7 +39,7 @@ verify(Bio::Regexp->new->add('AA')->add('AC')->single_stranded,
 verify(Bio::Regexp->new->add('ATG'),
        'AAAGACATCC',
        'basic reverse complement',
-       matches => [[8,5]]);
+       matches => [[8,5,'CAT']]);
 
 
 verify(Bio::Regexp->new->rna->add('AUG'),
@@ -75,7 +75,7 @@ verify(Bio::Regexp->new->add('AA')->circular,
 verify(Bio::Regexp->new->add('GAAC')->circular,
        'TCAGT',
        'circular and reverse complement',
-       matches => [[7,3]]);
+       matches => [[7,3,'GTTC']]);
 
 
 verify(Bio::Regexp->new->add('HYNV'),
@@ -92,6 +92,12 @@ verify(Bio::Regexp->new->add('DWW[^MG][^V][^D]'),
        'GAATTC',
        'combine base and IUPAC',
        matches => [[0,6],[6,0]]);
+
+
+verify(Bio::Regexp->new->add('AUG')->no_substr,
+       'GCGAUGGCG',
+       'no substr',
+       matches => [[3,6,undef]]);
 
 
 
@@ -112,6 +118,12 @@ sub verify {
     foreach my $i (0 .. $#matches) {
       is($matches[$i]->{start}, $checks{matches}->[$i]->[0], "$desc: $i start");
       is($matches[$i]->{end}, $checks{matches}->[$i]->[1], "$desc: $i end");
+
+      if (exists $checks{matches}->[$i]->[2]) {
+        is($matches[$i]->{match}, $checks{matches}->[$i]->[2], "$desc: $i match string");
+      }
+
     }
   }
+
 }

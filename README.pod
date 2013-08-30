@@ -28,7 +28,7 @@ The goal of this module is to provide a complete search. Given the particulars o
 
 It handles cases where matches overlap in the sequence and cases where your regular expression can match in multiple ways. For circular DNA plasmids it will find matches even if they span the arbitrary location in the circular sequence selected to the "start". For double-stranded DNA it will find matches on the reverse complement strand as well.
 
-The typical use case of this module is to search for multiple small patterns in large amounts of input data. Although it is optimised for that task it is efficient at others. For efficiency, usually none of the input sequence data is copied at all except to extract matches (this can be disabled too).
+The typical use case of this module is to search for multiple small patterns in large amounts of input data. Although it is optimised for that task it is efficient at others. For efficiency, usually none of the input sequence data is copied at all except to extract matches (but this can be disabled with C<no_substr>).
 
 
 

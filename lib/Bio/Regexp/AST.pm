@@ -11,6 +11,7 @@ my $parser;
 
   $parser = qr{
     ## MAIN
+
     <regexp>
 
     ## GRAMMAR
@@ -46,12 +47,12 @@ my $parser;
 
 
 sub new {
-  my ($class, $regexp, $type, $strict_thymine_uracil) = @_;
+  my ($class, $regexp, $type, $arg) = @_;
 
   my $self = {
                regexp => $regexp,
                type => $type,
-               strict_thymine_uracil => $strict_thymine_uracil,
+               strict_thymine_uracil => $arg->{strict_thymine_uracil},
              };
 
   bless $self, $class;
