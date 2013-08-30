@@ -119,6 +119,7 @@ When matching, only a single pass will be made over the data so as to find all p
 If the C<circular> method is called, the search sequence C<GAATTC> will match the following input:
 
     ATTCGGGGGGGGGGGGGGGGGGA
+    ----                 --
 
 The C<start> and C<end> coordinates for one of the matches will be 21 and 27. Since the input's length is only 23, we know that it must have wrapped around. In this case there will be another match of coordinates at 27 and 21 because C<GAATTC> is a palindromic sequence.
 

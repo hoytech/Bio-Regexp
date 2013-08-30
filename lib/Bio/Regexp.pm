@@ -10,25 +10,6 @@ use Regexp::Exhaustive;
 use Bio::Regexp::AST;
 
 
-sub new {
-  my ($class, @args) = @_;
-
-  my $self = {};
-  bless $self, $class;
-
-  return $self;
-}
-
-
-sub add {
-  my ($self, $regexp) = @_;
-
-  die "Can't add new regexp because regexp has already been compiled" if $self->{compiled_regexp};
-
-  push @{ $self->{regexps} }, $regexp;
-
-  return $self;
-}
 
 
 sub dna { _arg($_[0], 'type', 'dna') }
@@ -47,17 +28,7 @@ sub strict_case { _arg($_[0], 'strict_case', 1) }
 sub no_substr { _arg($_[0], 'no_substr', 1) }
 
 
-sub _arg {
-  my ($self, $arg, $val) = @_;
-  die "Can't set $arg to $val because it was already set to $val" if exists $self->{$arg};
-  die "Can't set $arg to $val because regexp has already been compiled" if $self->{compiled_regexp};
-  $self->{arg}->{$arg} = $val;
-  return $self;
-}
-
-
-
-sub _process_args {
+sub _arg_defaults {
   my ($self) = @_;
 
   $self->{type} //= 'dna';
@@ -72,12 +43,38 @@ sub _process_args {
 }
 
 
+
+
+
+sub new {
+  my ($class, @args) = @_;
+
+  my $self = {};
+  bless $self, $class;
+
+  return $self;
+}
+
+
+
+sub add {
+  my ($self, $regexp) = @_;
+
+  die "Can't add new regexp because regexp has already been compiled" if $self->{compiled_regexp};
+
+  push @{ $self->{regexps} }, $regexp;
+
+  return $self;
+}
+
+
+
 sub compile {
   my ($self) = @_;
 
   return if $self->{compiled_regexp};
 
-  $self->_process_args;
+  $self->_arg_defaults;
 
   my $regexp_index = 0;
   my @regexp_fragments;
@@ -138,7 +135,6 @@ sub compile {
 
 
 
-
 sub match {
   my ($self, $input, $callback) = @_;
 
@@ -161,7 +157,7 @@ sub match {
   }
 
 
-  ## Check circular component
+  ## Check circular overlap
 
   if ($self->{arg}->{circular}) {
     my $start = length($input) - $self->{max} + 1;
@@ -203,6 +199,21 @@ sub match {
   return @output;
 }
 
+
+
+
+
+
+sub _arg {
+  my ($self, $arg, $val) = @_;
+
+  die "Can't set $arg to $val because it was already set to $val" if exists $self->{$arg};
+  die "Can't set $arg to $val because regexp has already been compiled" if $self->{compiled_regexp};
+
+  $self->{arg}->{$arg} = $val;
+
+  return $self;
+}
 
 
 1;
@@ -332,6 +343,7 @@ When matching, only a single pass will be made over the data so as to find all p
 If the C<circular> method is called, the search sequence C<GAATTC> will match the following input:
 
     ATTCGGGGGGGGGGGGGGGGGGA
+    ----                 --
 
 The C<start> and C<end> coordinates for one of the matches will be 21 and 27. Since the input's length is only 23, we know that it must have wrapped around. In this case there will be another match of coordinates at 27 and 21 because C<GAATTC> is a palindromic sequence.
 
@@ -367,6 +379,6 @@ This module is licensed under the same terms as perl itself.
 
 TODO:
 
-Implement non-capturing groups
+!! Implement non-capturing groups
 
 ?? Implement back references  http://www.bioperl.org/wiki/Regular_expressions_and_Repeats
