@@ -133,18 +133,16 @@ sub normalize_dna_rna {
   foreach my $component (@{ $self->{components} }) {
     my @chars = @{ $component->{chars} };
 
-    if ($self->{type} eq 'dna') {
+    if ($self->{strict_thymine_uracil}) {
       die "U in DNA pattern and strict_thymine_uracil specified"
-        if grep { $_ eq 'U' } @chars;
-    }
+        if $self->{type} eq 'dna' && grep { $_ eq 'U' } @chars;
 
-    if ($self->{type} eq 'rna') {
       die "T in RNA pattern and strict_thymine_uracil specified"
-        if grep { $_ eq 'T' } @chars;
-
-      ## Temporarily normalize U to T
-      @chars = map { $_ eq 'U' ? 'T' : $_ } @chars;
+        if $self->{type} eq 'rna' && grep { $_ eq 'T' } @chars;
     }
+
+    ## Temporarily normalize U to T
+    @chars = map { $_ eq 'U' ? 'T' : $_ } @chars;
 
     ## Expand IUPAC codes
     @chars = map { @{ $iupac_lookup->{$_} || [$_] } } @chars;

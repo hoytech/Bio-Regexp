@@ -12,6 +12,12 @@ verify(Bio::Regexp->new->add('AA')->single_stranded,
        matches => [[0,2],[1,3]]);
 
 
+verify(Bio::Regexp->new->add('GATA')->single_stranded,
+       'GATTGATC',
+       'basic no match',
+       matches => []);
+
+
 verify(Bio::Regexp->new->add('GAT{2,3}C[AT]')->single_stranded,
        'GGGATTCAAGATTTCTA',
        'simple regexp operations',
@@ -24,7 +30,34 @@ verify(Bio::Regexp->new->add('AA')->add('AC')->single_stranded,
        matches => [[0,2],[1,3]]);
 
 
+verify(Bio::Regexp->new->add('ATG'),
+       'AAAGACATCC',
+       'basic reverse complement',
+       matches => [[5,8]]);
 
+
+verify(Bio::Regexp->new->add('ATG'),
+       'AAAGACATCC',
+       'basic reverse complement',
+       matches => [[5,8]]);
+
+
+verify(Bio::Regexp->new->rna->add('AUG'),
+       'GGCCGGCATAA',
+       'RNA pattern, DNA string',
+       matches => [[6,9]]);
+
+
+verify(Bio::Regexp->new->add('TAT'),
+       'AUGUAUAA',
+       'DNA pattern, RNA string',
+       matches => [[3,6],[4,7]]);
+
+
+verify(Bio::Regexp->new->add('GAATTC'),
+       'AGACTGAGAATTCGGG',
+       'palindrome matches twice same place',
+       matches => [[7,13],[7,13]]);
 
 
 done_testing();
