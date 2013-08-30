@@ -2,36 +2,38 @@ package Bio::Regexp::AST;
 
 use common::sense;
 
-use Data::Dumper;
+use List::MoreUtils;
+
+my $parser;
 
 {
   use Regexp::Grammars;
 
-  $Bio::Regexp::AST::parser = qr{
+  $parser = qr{
     ## MAIN
     <regexp>
 
     ## GRAMMAR
 
-    <objtoken: Bio::Regexp::AST::regexp>
+    <token: regexp>
     ^
       <[element]>*
     $
 
-    <objtoken: Bio::Regexp::AST::element>
+    <token: element>
       <literal> <repeat>? |
       <charclass> <repeat>?
 
-    <objtoken: Bio::Regexp::AST::literal>
+    <token: literal>
       [a-zA-Z]
 
-    <objtoken: Bio::Regexp::AST::charclass>
+    <token: charclass>
       \[ <negate_charclass>? <[literal]>+ \]
 
-    <objtoken: Bio::Regexp::AST::negate_charclass>
+    <token: negate_charclass>
       \^
 
-    <objtoken: Bio::Regexp::AST::repeat>
+    <token: repeat>
       \{
          (?:
             <max=(?: \d+ )> <min=(?{ $MATCH{max} })> |
@@ -43,101 +45,187 @@ use Data::Dumper;
 }
 
 
-sub Bio::Regexp::AST::regexp::render {
-  my ($self, $level) = @_;
+sub new {
+  my ($class, $regexp, $type, $strict_thymine_uracil) = @_;
 
-  my $output = '';
+  my $self = {
+               regexp => $regexp,
+               type => $type,
+               strict_thymine_uracil => $strict_thymine_uracil,
+             };
 
-  for my $element (@{ $self->{element} }) {
-    $output .= $element->render;
+  bless $self, $class;
+
+  $regexp =~ $parser;
+
+  my $parsed = \%/;
+
+  my @components;
+
+  foreach my $element (@{ $parsed->{regexp}->{element} }) {
+    my $component = {};
+
+    if ($element->{literal}) {
+      $component->{chars} = [ $element->{literal} ];
+    } elsif ($element->{charclass}) {
+      $component->{chars} = $element->{charclass}->{literal};
+      $component->{negate} = 1 if $element->{charclass}->{negate_charclass};
+    } else {
+      die "unknown element type";
+    }
+
+    if ($element->{repeat}) {
+      $component->{min} = $element->{repeat}->{min};
+      $component->{max} = $element->{repeat}->{max};
+    } else {
+      $component->{min} = 1;
+      $component->{max} = 1;
+    }
+
+    push @components, $component;
   }
 
-  return $output;
+  $self->{components} = \@components;
+
+  if ($type eq 'dna' || $type eq 'rna') {
+    $self->normalize_dna_rna;
+  } else {
+    die "protein not impl";
+  }
+
+  return $self;
 }
 
 
-sub Bio::Regexp::AST::regexp::reverse_complement {
-  my ($self, $level) = @_;
-
-  print Dumper($self);
-  die;
-}
-
-
-sub Bio::Regexp::AST::regexp::compute_min_max {
-  my ($self, $level) = @_;
+sub compute_min_max {
+  my ($self) = @_;
 
   my $min = my $max = 0;
 
-  for my $element (@{ $self->{element} }) {
-     if (my $repeat = $element->{repeat}) {
-       $min += $repeat->{min};
-       $max += $repeat->{max};
-     } else {
-       $min++;
-       $max++;
-     }
+  for my $component (@{ $self->{components} }) {
+     $min += $component->{min};
+     $max += $component->{max};
   }
 
   return ($min, $max);
 }
 
 
+my $iupac_lookup = {
+  R => [ qw/A G/ ],
+  Y => [ qw/C T/ ],
+  W => [ qw/A T/ ],
+  S => [ qw/C G/ ],
+  M => [ qw/A C/ ],
+  K => [ qw/G T/ ],
+  H => [ qw/A C T/ ],
+  B => [ qw/C G T/ ],
+  V => [ qw/A C G/ ],
+  D => [ qw/A G T/ ],
+  N => [ qw/A C G T/ ],
+};
 
-sub Bio::Regexp::AST::element::render {
-  my ($self, $level) = @_;
+
+
+sub normalize_dna_rna {
+  my ($self) = @_;
+
+  foreach my $component (@{ $self->{components} }) {
+    my @chars = @{ $component->{chars} };
+
+    if ($self->{type} eq 'dna') {
+      die "U in DNA pattern and strict_thymine_uracil specified"
+        if grep { $_ eq 'U' } @chars;
+    }
+
+    if ($self->{type} eq 'rna') {
+      die "T in RNA pattern and strict_thymine_uracil specified"
+        if grep { $_ eq 'T' } @chars;
+
+      ## Temporarily normalize U to T
+      @chars = map { $_ eq 'U' ? 'T' : $_ } @chars;
+    }
+
+    ## Expand IUPAC codes
+    @chars = map { @{ $iupac_lookup->{$_} || [$_] } } @chars;
+
+    ## Remove uniques
+    @chars = List::MoreUtils::uniq(@chars);
+
+    ## Negate
+    if ($component->{negate}) {
+      my @negated;
+
+      foreach my $base (qw/ A T C G /) {
+        push @negated, $base unless grep { $_ eq $base } @chars;
+      }
+
+      die "can't negate all encompassing character class" if !@negated;
+
+      @chars = @negated;
+    }
+
+    $component->{chars} = \@chars;
+  }
+}
+
+
+
+sub reverse_complement {
+  my ($self) = @_;
+
+  $self->{components} = [ reverse @{ $self->{components} } ];
+
+  foreach my $component (@{ $self->{components} }) {
+    my @chars = @{ $component->{chars} };
+
+    @chars = map { $_ eq 'A' ? 'T' :
+                   $_ eq 'T' ? 'A' :
+                   $_ eq 'C' ? 'G' :
+                   $_ eq 'G' ? 'C' :
+                   die "unrecognised base: $_"
+                 } @chars;
+
+    $component->{chars} = \@chars;
+  }
+}
+
+
+
+sub render {
+  my ($self) = @_;
 
   my $output = '';
 
-  if ($self->{literal}) {
-    $output .= $self->{literal}->render;
-  } elsif ($self->{charclass}) {
-    $output .= $self->{charclass}->render;
-  } else {
-    die "unknown element type";
-  }
+  foreach my $component (@{ $self->{components} }) {
+    my @chars = @{ $component->{chars} };
 
-  $output .= $self->{repeat}->render if $self->{repeat};
+    ## Re-normalize T to U
+    if ($self->{type} eq 'rna') {
+      @chars = map { $_ eq 'T' ? 'U' : $_ } @chars;
+    }
+
+    ## Support T and U unless strict
+    if (!$self->{strict_thymine_uracil}) {
+      @chars = map { $_ eq 'T' || $_ eq 'U' ? ('T', 'U') : $_ } @chars;
+    }
+
+    if (@chars == 1) {
+      $output .= $chars[0];
+    } else {
+      $output .= '[' . join('', @chars) . ']';
+    }
+
+    if ($component->{min} == $component->{max}) {
+      $output .= "{$component->{min}}" unless $component->{min} == 1;
+    } elsif ($component->{min} == 0 && $component->{max} == 1) {
+      $output .= "?";
+    } else {
+      $output .= "{$component->{min},$component->{max}}";
+    }
+  }
 
   return $output;
-}
-
-sub Bio::Regexp::AST::literal::render {
-  my ($self, $level) = @_;
-
-  return $self->{''};
-}
-
-sub Bio::Regexp::AST::charclass::render {
-  my ($self, $level) = @_;
-
-  my $output = '';
-
-  $output .= '[';
-
-  $output .= '^' if $self->{negate_charclass};
-
-  foreach my $literal (@{ $self->{literal} }) {
-    $output .= $literal->render;
-  }
-
-  $output .= ']';
-
-  return $output;
-}
-
-sub Bio::Regexp::AST::repeat::render {
-  my ($self, $level) = @_;
-
-  if ($self->{min} == 0 && $self->{max} == 1) {
-    return '?';
-  } elsif ($self->{min} == $self->{max}) {
-    return "{$self->{min}}";
-  } else {
-    return "{$self->{min},$self->{max}}";
-  }
-
-  return $self->{''};
 }
 
 

@@ -12,6 +12,7 @@ my %args = (
       'common::sense' => 0,
       'Regexp::Exhaustive' => 0,
       'Regexp::Grammars' => 0,
+      'List::MoreUtils' => 0,
     },
     LIBS => [],
     DEFINE => '',

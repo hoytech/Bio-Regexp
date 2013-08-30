@@ -17,7 +17,7 @@ sub new {
   bless $self, $class;
 
   return $self;
-};
+}
 
 
 sub add {
@@ -83,19 +83,18 @@ sub compile {
   foreach my $regexp (@{ $self->{regexps} }) {
     ## Parse
 
-    $regexp =~ $Bio::Regexp::AST::parser || die "Couldn't parse regexp: $regexp";
-    my $ast = \%/;
+    my $ast = Bio::Regexp::AST->new($regexp, $self->{type}, $self->{arg}->{strict_thymine_uracil});
 
     ## Compute meta data
 
-    my ($min, $max) = $ast->{regexp}->compute_min_max;
+    my ($min, $max) = $ast->compute_min_max;
 
     $self->{min} = $min if !defined $self->{min} || $min < $self->{min};
     $self->{max} = $max if !defined $self->{max} || $max > $self->{max};
 
     ## Main "sense" strand
 
-    my $rendered = $ast->{regexp}->render;
+    my $rendered = $ast->render;
 
     push @regexp_fragments, "$rendered(?{ $regexp_index })";
     $regexp_index++;
@@ -109,7 +108,8 @@ sub compile {
     ## Reverse complement strand
 
     if ($self->{arg}->{strands} == 2) {
-      $rendered = $ast->{regexp}->reverse_complement->render;
+      $ast->reverse_complement;
+      $rendered = $ast->render;
 
       push @regexp_fragments, "$rendered(?{ $regexp_index })";
       $regexp_index++;
