@@ -22,13 +22,13 @@ Bio::Regexp - Exhaustive DNA/RNA/protein regexp searches
 
 =head1 DESCRIPTION
 
-This module is for searching inside DNA or RNA or protein sequences. The sequence to be found is specified by a restricted sub-set of perl regular expressions. The restrictions allow us to manipulate the regexp in various ways described below. As well as regular expression character classes, bases can be expressed in IUPAC short form (which are kind of like character classes themselves).
+This module is for searching inside DNA or RNA or protein sequences. The sequence to be found is specified by a restricted version of regular expressions. The restrictions allow us to manipulate the regexp in various ways described below. As well as regular expression character classes, bases can be expressed in IUPAC short form (which are kind of like character classes themselves).
 
-The goal of this module is to provide a complete search. Given the particulars of a sequence (DNA/RNA/protein, linear molecule/circular plasmid, single/double stranded) it attempts to figure out all of the possible matches, all without any false-positive or duplicated matches.
+The goal of this module is to provide a complete search. Given the particulars of a sequence (DNA/RNA/protein, linear molecule/circular plasmid, single/double stranded) it attempts to figure out all of the possible matches without any false-positive or duplicated matches.
 
-It handles cases where matches overlap in the sequence and cases where your regular expression can match in multiple ways. For circular DNA plasmids it will find matches even if they span the arbitrary location in the circular sequence selected to the "start". For double-stranded DNA it will find matches on the reverse complement strand as well.
+It handles cases where matches overlap in the sequence and cases where the regular expression can match in multiple ways. For circular DNA (plasmids) it will find matches even if they span the arbitrary location in the circular sequence selected as the "start". For double-stranded DNA it will find matches on the reverse complement strand as well.
 
-The typical use case of this module is to search for multiple small patterns in large amounts of input data. Although it is optimised for that task it is efficient at others. For efficiency, usually none of the input sequence data is copied at all except to extract matches (but this can be disabled with C<no_substr>).
+The typical use case of this module is to search for multiple small patterns in large amounts of input data. Although it is optimised for that task it is also efficient at others. For efficiency, none of the input sequence data is copied at all except to extract matches (but this can be disabled with C<no_substr>) and to implement circular searches (though the amount copied is usually very small).
 
 
 
@@ -38,7 +38,7 @@ The input string passed to C<match> must be a nucleotide sequence for now (prote
 
 If your data does not conform to the description above then the results are undefined and you should sanitise your data before using this module.
 
-If your data is anything other than DNA (the default) you must call one of the type functions C<dna>, C<rna>, or C<protein>:
+If your data is anything other than DNA (the default) you must call one of the type functions like C<rna> or C<protein>:
 
     my $re = Bio::Regexp->new->rna->add('GAUAUC')->compile;
 
@@ -57,7 +57,7 @@ Most methods of searching nucleotide sequences will only find non-overlapping ma
     --
       --
 
-With this module you get all three matches that occur anywhere:
+With this module you get all three matches:
 
     AAAA
     --
@@ -84,7 +84,7 @@ For circular inputs, interbase coordinates can also be greater than the length o
 
 =head1 IUPAC SHORT FORMS
 
-For DNA and RNA, IUPAC incompletely specified amino acid sequences can be used. These are analogous to regular expression character classes. Just like perl's C<\s> is short for C<[ \r\n\t]>, in IUPAC form C<V> is short for C<[ACG]>, or C<[^T]>. Unless C<strict_thymine_uracil> is in effect this will actually be C<[^TU]> for both DNA and RNA inputs.
+For DNA and RNA, IUPAC incompletely specified amino acid sequences can be used. These are analogous to regular expression character classes. Just like perl's C<\s> is short for C<[ \r\n\t]>, in IUPAC form C<V> is short for C<[ACG]>, or C<[^T]>. Unless C<strict_thymine_uracil> is in effect this will actually be like C<[^TU]> for both DNA and RNA inputs.
 
 See L<wikipedia|http://en.wikipedia.org/wiki/Nucleic_acid_notation> for the list of IUPAC short forms.
 
@@ -106,7 +106,7 @@ Multiple patterns can be added at once simply by calling C<add()> multiple times
 
     my @matches = $re->match($input);
 
-Which pattern matched is returned as the C<match> key in the returned match results. You should probably have a hash of all your patterns so that you can look them up while processing matches. The way this is implemented is similar to the very useful L<Regexp::Assemble> except that it doesn't implement the hacks needed for ancient perl versions.
+Which pattern matched is returned as the C<match> key in the returned match results. You should probably have a hash of all your patterns so that you can look them up while processing matches. The way this is implemented is similar to the very useful L<Regexp::Assemble> except without the hacks needed for ancient perl versions.
 
 When matching, only a single pass will be made over the data so as to find all possible locations that either of the added sequences could have matched. Large numbers of patterns should be fairly efficient because the perl 5.10+ regular expression engine uses a trie data structure for such patterns (and 5.10 is the minimum required perl for other reasons).
 
