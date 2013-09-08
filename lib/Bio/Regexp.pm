@@ -308,7 +308,7 @@ For circular inputs, interbase coordinates can also be greater than the length o
 
 =head1 IUPAC SHORT FORMS
 
-For DNA and RNA, IUPAC incompletely specified amino acid sequences can be used. These are analogous to regular expression character classes. Just like perl's C<\s> is short for C<[ \r\n\t]>, in IUPAC form C<V> is short for C<[ACG]>, or C<[^T]>. Unless C<strict_thymine_uracil> is in effect this will actually be like C<[^TU]> for both DNA and RNA inputs.
+For DNA and RNA, IUPAC incompletely specified nucleotide sequences can be used. These are analogous to regular expression character classes. Just like perl's C<\s> is short for C<[ \r\n\t]>, in IUPAC form C<V> is short for C<[ACG]>, or C<[^T]>. Unless C<strict_thymine_uracil> is in effect this will actually be like C<[^TU]> for both DNA and RNA inputs.
 
 See L<wikipedia|http://en.wikipedia.org/wiki/Nucleic_acid_notation> for the list of IUPAC short forms.
 
