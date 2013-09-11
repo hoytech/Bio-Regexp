@@ -5,6 +5,7 @@ our $VERSION = '0.100';
 use v5.10;
 use common::sense;
 
+use Data::Alias;
 use Regexp::Exhaustive;
 
 use Bio::Regexp::AST;
@@ -136,7 +137,7 @@ sub compile {
 
 
 sub match {
-  my ($self, $input, $callback) = @_;
+  alias my ($self, $input, $callback) = @_;
 
   $self->compile;
 

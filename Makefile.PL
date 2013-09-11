@@ -13,6 +13,7 @@ my %args = (
       'Regexp::Exhaustive' => 0,
       'Regexp::Grammars' => 0,
       'List::MoreUtils' => 0,
+      'Data::Alias' => 0,
     },
     LIBS => [],
     DEFINE => '',
