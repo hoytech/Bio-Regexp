@@ -1,6 +1,6 @@
 package Bio::Regexp;
 
-our $VERSION = '0.100';
+our $VERSION = '0.101';
 
 use v5.10;
 use common::sense;
