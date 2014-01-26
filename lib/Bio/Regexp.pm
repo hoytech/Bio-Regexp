@@ -356,6 +356,8 @@ In order to make this efficient even with really long input sequences, this modu
 
 L<Bio-Regexp github repo|https://github.com/hoytech/Bio-Regexp>
 
+Presentation about Bio::Regexp and more: L<Getting the most out of regular expressions|http://hoytech.github.io/regexp-presentation/>
+
 L<Bio::Tools::SeqPattern> from the BioPerl distribution also allows the manipulation of patterns but is less advanced than this module. Also, the way L<Bio::Tools::SeqPattern> reverses a regular expression in order to match the reverse complement is... wow. Just wow. :)
 
 L<Bio::Grep> is an interface to various programs that search biological sequences. L<Bio::Grep::Backend::RE> is probably the most comparable to this module.
